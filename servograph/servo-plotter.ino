@@ -67,6 +67,8 @@ void loop() {
     if(cmd_pc=="x") { go_to_x_axis(); }
     if(cmd_pc=="y") { go_to_y_axis(); }
     if(cmd_pc=="reset") { reset(); }
+    if(cmd_pc=="demo") { demo(); }
+    if(cmd_pc=="osc") { oscilloscope(); }
     if(cmd_pc=="sin") { sin_fn(); }
     if(cmd_pc=="bell") { guassian_fn(); }
     if(cmd_pc=="atan") { arctan(); }
@@ -123,6 +125,40 @@ void demo() {
   ln();
   delay(delay_tm);
   sin_fn();
+}
+
+void oscilloscope() {
+  // This function is designed to plot oscilloscope results based on analog voltage readings from pin A0.
+  // Once running, send the command "stop" to exit the function.
+  // This has not been tested yet and may contain errors.
+  
+  set_transverse_limits(6); // sets angle range to plot over
+
+  fn_max = 1024; // maximum possible analog reading
+  fn_min = 0; // minimum possible analog value
+  x_min = 0; // default
+  x_max = 1; // default
+
+  int volt;
+  int results[NUM_SERVOS];
+  int meas_delay = 33; // delay between each measurement
+  unsigned long tm = millis();
+
+  while(true) {
+    if(Serial.available()) {
+      cmd_pc = Serial.readString();
+      if(cmd_pc=="stop") { break; }
+    }
+    if(tm>=millis()) {
+      volt = analogRead(A0);
+      for(int ele=0; ele<NUM_SERVOS-1; ele++) {
+        results[ele] = results[ele+1];
+        set_servo_position(ele, results[ele]);
+      }
+      results[NUM_SERVOS-1] = volt;
+      set_servo_position(NUM_SERVOS-1, results[NUM_SERVOS-1]);
+    }
+  }
 }
 
 void all_to_position(float y_val) {
@@ -420,40 +456,6 @@ void cant_multi() {
         }
       }
       set_servo_position(servo_cnt, y_val);
-    }
-  }
-}
-
-void oscilloscope() {
-  // This function is designed to plot oscilloscope results based on analog voltage readings from pin A0.
-  // Once running, send the command "stop" to exit the function.
-  // This has not been tested yet and may contain errors.
-  
-  set_transverse_limits(6); // sets angle range to plot over
-
-  fn_max = 1024; // maximum possible analog reading
-  fn_min = 0; // minimum possible analog value
-  x_min = 0; // default
-  x_max = 1; // default
-
-  int volt;
-  int results[NUM_SERVOS];
-  int meas_delay = 33; // delay between each measurement
-  unsigned long tm = millis();
-
-  while(true) {
-    if(Serial.available()) {
-      cmd_pc = Serial.readString();
-      if(cmd_pc=="stop") { break; }
-    }
-    if(tm>=millis()) {
-      volt = analogRead(A0);
-      for(int ele=0; ele<NUM_SERVOS-1; ele++) {
-        results[ele] = results[ele+1];
-        set_servo_position(ele, results[ele]);
-      }
-      results[NUM_SERVOS-1] = volt;
-      set_servo_position(NUM_SERVOS-1, results[NUM_SERVOS-1]);
     }
   }
 }
